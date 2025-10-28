@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Promptbattle - Spieler 1</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f0f8ff; }
+        #status, #timer { font-size: 2.5em; margin-bottom: 20px; font-weight: bold; color: #007bff; }
+        #promptInput { width: 80%; padding: 15px; font-size: 1.2em; border: 3px solid #007bff; border-radius: 8px; resize: none; }
+        #promptArea, #imageSelection { width: 100%; text-align: center; }
+        #imageSelection { display: none; margin-top: 30px; }
+        .image-option {
+            border: 4px solid transparent;
+            width: 200px;
+            height: 200px;
+            margin: 15px;
+            cursor: pointer;
+            display: inline-block;
+            background-color: #ddd;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: transparent;
+            line-height: 200px;
+            text-align: center;
+            font-size: 0.9em;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .image-option.selected { border-color: #28a745; box-shadow: 0 0 15px #28a745; }
+        button { padding: 12px 25px; font-size: 1.1em; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 5px; margin-top: 15px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🤖 Spieler 1</h1>
+    <div id="status">Warten auf Spielstart...</div>
+    <div id="timer"></div>
+
+    <div id="promptArea" class="hidden">
+        <textarea id="promptInput" rows="5" placeholder="Geben Sie hier Ihren Prompt ein..."></textarea>
+    </div>
+
+    <div id="imageSelection">
+        <h2>Wählen Sie Ihr bestes Bild:</h2>
+        <div id="images">
+            </div>
+        <button id="confirmBtn" onclick="confirmSelection()" disabled>Auswahl bestätigen</button>
+    </div>
+
+    <script>
+        const PLAYER_ID = 1;
+
+        let socket = null;
+
+        const statusDiv = document.getElementById('status');
+        const timerDiv = document.getElementById('timer');
+        const promptInput = document.getElementById('promptInput');
+        const promptArea = document.getElementById('promptArea');
+        const imageSelection = document.getElementById('imageSelection');
+        const imagesDiv = document.getElementById('images');
+        const confirmBtn = document.getElementById('confirmBtn');
+
+        let selectedImageId = null;
+
+        promptInput.addEventListener('input', () => {
+            if (socket) socket.emit('updatePrompt', { playerId: PLAYER_ID, prompt: promptInput.value });
+        });
+
+        imagesDiv.addEventListener('click', (event) => {
+            const option = event.target.closest('.image-option');
+            if (option) {
+                document.querySelectorAll('.image-option').forEach(el => el.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedImageId = parseInt(option.dataset.id);
+                confirmBtn.disabled = false;
+            }
+        });
+
+        function confirmSelection() {
+            if (selectedImageId !== null && socket) {
+                socket.emit('selectImage', { playerId: PLAYER_ID, imageId: selectedImageId });
+
+                statusDiv.textContent = 'Auswahl gesendet. Warten auf das Ende der Runde...';
+                imageSelection.style.display = 'none';
+                confirmBtn.disabled = true;
+            }
+        }
+
+        function displayImages(imageUrls) {
+            imagesDiv.innerHTML = '';
+            const timestamp = Date.now();
+
+            imageUrls.forEach((url, index) => {
+                const div = document.createElement('div');
+                div.classList.add('image-option');
+                div.setAttribute('data-id', index);
+
+                div.textContent = `Bild ${index + 1} (lädt...)`;
+                div.style.backgroundColor = '#f0f0f0';
+
+                const img = new Image();
+                const cacheBustingUrl = `${url}?t=${timestamp}`;
+
+                img.onload = () => {
+                    div.style.backgroundImage = `url(${cacheBustingUrl})`;
+                    div.textContent = `Bild ${index + 1}`;
+                    div.style.backgroundColor = 'transparent';
+                };
+
+                img.onerror = () => {
+                    div.textContent = `Ladefehler Bild ${index + 1}`;
+                    div.style.backgroundColor = '#d9534f';
+                    console.error(`[Spieler ${PLAYER_ID}] FEHLER beim Laden von Bild ${index + 1}: ${cacheBustingUrl}`);
+                };
+
+                img.src = cacheBustingUrl;
+
+                imagesDiv.appendChild(div);
+            });
+        }
+
+        /**
+         * Läd das Socket.IO Client Skript dynamisch über die korrekte URL
+         * und initialisiert die Socket-Verbindung.
+         */
+        function loadSocketScriptAndConnect(socketUrl) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = `${socketUrl}/socket.io/socket.io.js`;
+
+                script.onload = () => {
+                    resolve(io(socketUrl));
+                };
+                script.onerror = () => {
+                    reject(new Error(`Fehler beim Laden von Socket.IO von ${script.src}`));
+                };
+
+                document.head.appendChild(script);
+            });
+        }
+
+        // Hauptinitialisierungsfunktion
+        async function initializeApp() {
+            // KORREKTUR: Erzwinge Port 3000, um die Verbindung sicherzustellen
+            const host = window.location.hostname;
+            const protocol = window.location.protocol;
+
+            // Definiere die Socket-URL mit dem bekannten Server-Port 3000
+            const socketUrl = `${protocol}//${host}:3000`;
+
+            try {
+                // Lade Socket.IO Skript und verbinde
+                socket = await loadSocketScriptAndConnect(socketUrl);
+                statusDiv.textContent = 'Verbunden. Warten auf Spielstart...';
+
+                // Füge Socket.IO Events hinzu
+                socket.on('stateUpdate', handleStateUpdate);
+
+                console.log(`Spieler ${PLAYER_ID} verbunden mit Socket.IO unter ${socketUrl}`);
+
+            } catch (socketError) {
+                console.error("SCHWERER FEHLER: Verbindung fehlgeschlagen. Siehe Konsole.", socketError);
+                statusDiv.textContent = "SCHWERER FEHLER: Verbindung fehlgeschlagen. Siehe Konsole.";
+                return;
+            }
+        }
+
+        function handleStateUpdate(state) {
+            statusDiv.textContent = `Status: ${state.status}`;
+            timerDiv.textContent = `Zeit: ${state.timer}s`;
+
+            switch (state.status) {
+                case 'READY':
+                    promptArea.classList.add('hidden');
+                    imageSelection.style.display = 'none';
+                    promptInput.value = '';
+                    selectedImageId = null;
+                    imagesDiv.innerHTML = '';
+                    confirmBtn.disabled = true;
+                    break;
+                case 'PROMPTING':
+                    promptArea.classList.remove('hidden');
+                    imageSelection.style.display = 'none';
+                    break;
+                case 'GENERATING':
+                    statusDiv.textContent = 'Bilder werden generiert... ⏳';
+                    promptArea.classList.add('hidden');
+                    imageSelection.style.display = 'none';
+                    break;
+                case 'SELECTING':
+                    statusDiv.textContent = 'BILDER GENERIERT! Wählen Sie aus.';
+                    promptArea.classList.add('hidden');
+
+                    if (imagesDiv.children.length === 0) {
+                        displayImages(state[`images${PLAYER_ID}`]);
+                    }
+
+                    if (selectedImageId === null) {
+                        imageSelection.style.display = 'block';
+                    }
+                    break;
+                case 'FINISHED':
+                    statusDiv.textContent = 'BATTLE BEENDET! Ergebnisse werden angezeigt.';
+                    promptArea.classList.add('hidden');
+                    imageSelection.style.display = 'none';
+                    break;
+            }
+        }
+
+        initializeApp();
+    </script>
+</body>
+</html>
