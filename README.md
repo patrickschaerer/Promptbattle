@@ -1,7 +1,7 @@
 # Promptbattle
 Websites for a Promptbattle public game, where two contestants prompt a picture and the public has to decide who created the better picture.
 
-Load index.html on the public screen. Spieler1.html on the screen of Player 1 and Spieler2.html on the screen of Player 2.
+Load index.html on the public screen, Spieler1.html on the screen of Player 1 and Spieler2.html on the screen of Player 2.
 
 There must be installed on the webserver:
 1. Socket.io
