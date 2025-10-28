@@ -14,15 +14,15 @@ Follow these commands to install (on a raspberry pi):
 
 1. Lighttpd:
     $sudo mkdir /var/www
-    $ sudo groupadd www-data
-    $ sudo adduser www-data www-data
-    $ sudo usermod -a -G www-data www-data
-    $ sudo chown -R www-data:www-data /var/www
-    $ sudo apt-get update
-    $ sudo apt-get install lighttpd
-    $ sudo chown -R www-data:www-data /var/www/html
-    $ sudo chmod -R 775 /var/www/html
-    $ sudo service lighttpd force-reload
+    $sudo groupadd www-data
+    $sudo adduser www-data www-data
+    $sudo usermod -a -G www-data www-data
+    $sudo chown -R www-data:www-data /var/www
+    $sudo apt-get update
+    $sudo apt-get install lighttpd
+    $sudo chown -R www-data:www-data /var/www/html
+    $sudo chmod -R 775 /var/www/html
+    $sudo service lighttpd force-reload
 2. copy all of the files of this repository to /var/www/html
 3. Node.js:
    $ sudo apt install nodejs npm -y
