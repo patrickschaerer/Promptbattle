@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Promptbattle - Publikum</title>
+    <style>
+        /* Grundlegendes Layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
+        /* Header mit Steuerelementen */
+        #header {
+            text-align: center;
+            padding: 20px;
+            transition: opacity 0.3s ease-in-out;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Standard-Container (PROMPTING Phase) */
+        #gameContainer {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 5;
+        }
+
+        .player-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 45%;
+            margin: 0 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Styles für die finale Bildansicht (FINISHED Status) */
+        .result-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            z-index: 1000;
+            background-color: black;
+        }
+
+        .result-view .player-result {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* Bildgröße für fensterfüllende Darstellung (in .result-view) */
+        .result-view .result-image {
+            background-size: contain !important;
+            width: 100%;
+            height: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Elemente verstecken im Endzustand */
+        .result-view .prompt-box,
+        .result-view .result-label,
+        .result-view h2,
+        .result-view h3 {
+            display: none !important;
+        }
+
+        /* Unsichtbarer Text (Beschriftung) */
+        .result-text {
+            color: transparent;
+            position: absolute;
+        }
+
+        /* Timer und Status Styles */
+        #timer { font-size: 3em; color: #d9534f; margin-bottom: 10px; }
+        #status { font-size: 1.5em; margin-bottom: 15px; }
+
+        /* Button Styles */
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+
+        /* Standard-Prompt Box */
+        .prompt-box {
+            min-height: 80px;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-style: italic;
+            flex-grow: 1;
+        }
+
+        /* Ergebnisbild-Container im Standard-Layout (Thumbnail-Größe) */
+        .result-image {
+            width: 100%;
+            height: 200px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #ccc;
+            overflow: hidden;
+            position: relative;
+            margin-top: 15px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>📸 KI Promptbattle Live</h1>
+        <div id="status">Warten auf Spielstart...</div>
+        <div id="timer"></div>
+        <button id="startButton" onclick="startGame()">▶️ START BATTLE RUNDE</button>
+        <button id="resetButton" onclick="resetGame()" style="background-color: #f0ad4e;">🔄 RESET</button>
+    </div>
+
+    <div id="gameContainer">
+        <div id="player1Card" class="player-card player-result">
+            <h2>Spieler 1</h2>
+            <h3>Aktueller Prompt (Live)</h3>
+            <div id="prompt1" class="prompt-box">Noch Keine Eingabe...</div>
+
+            <h3 class="result-label">Ausgewähltes Bild (Resultat)</h3>
+            <div id="result1Image" class="result-image">
+                <div id="result1Text" class="result-text">Spieler 1 Ergebnis</div>
+            </div>
+        </div>
+
+        <div id="player2Card" class="player-card player-result">
+            <h2>Spieler 2</h2>
+            <h3>Aktueller Prompt (Live)</h3>
+            <div id="prompt2" class="prompt-box">Noch Keine Eingabe...</div>
+
+            <h3 class="result-label">Ausgewähltes Bild (Resultat)</h3>
+            <div id="result2Image" class="result-image">
+                <div id="result2Text" class="result-text">Spieler 2 Ergebnis</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const timerDiv = document.getElementById('timer');
+        const prompt1Div = document.getElementById('prompt1');
+        const prompt2Div = document.getElementById('prompt2');
+        const result1ImageDiv = document.getElementById('result1Image');
+        const result2ImageDiv = document.getElementById('result2Image');
+        const gameContainer = document.getElementById('gameContainer');
+        const headerDiv = document.getElementById('header');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+
+        let allImages = { images1: [], images2: [] };
+        const playerResultCards = document.querySelectorAll('.player-result');
+        let socket = null;
+
+        function visualReset() {
+            if (gameContainer.classList.contains('result-view')) {
+                gameContainer.classList.remove('result-view');
+                headerDiv.style.display = 'block';
+            }
+        }
+
+        playerResultCards.forEach(card => {
+            card.addEventListener('click', visualReset);
+        });
+
+        function startGame() {
+            if (socket) socket.emit('startGame');
+        }
+
+        function resetGame() {
+            if (socket) socket.emit('resetGame');
+            gameContainer.classList.remove('result-view');
+            headerDiv.style.display = 'block';
+            result1ImageDiv.style.backgroundImage = 'none';
+            result2ImageDiv.style.backgroundImage = 'none';
+        }
+
+        /**
+         * Läd das Socket.IO Client Skript dynamisch und initialisiert die Socket-Verbindung.
+         */
+        function loadSocketScriptAndConnect(socketUrl) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                // Lade Skript dynamisch von der ermittelten URL (inkl. Port)
+                script.src = `${socketUrl}/socket.io/socket.io.js`;
+
+                script.onload = () => {
+                    resolve(io(socketUrl));
+                };
+                script.onerror = () => {
+                    reject(new Error(`Fehler beim Laden von Socket.IO von ${script.src}`));
+                };
+
+                document.head.appendChild(script);
+            });
+        }
+
+
+        // Hauptinitialisierungsfunktion
+        async function initializeApp() {
+            // NEUE KORREKTUR: Erzwinge Port 3000, da window.location.origin diesen nicht liefert
+            const host = window.location.hostname;
+            const protocol = window.location.protocol;
+
+            // Definiere die Socket-URL mit dem bekannten Server-Port 3000
+            const socketUrl = `${protocol}//${host}:3000`;
+            statusDiv.textContent = `Versuche Verbindung zu ${socketUrl}...`;
+
+            try {
+                // Lade Socket.IO Skript und verbinde
+                socket = await loadSocketScriptAndConnect(socketUrl);
+                statusDiv.textContent = 'Verbunden. Warten auf Spielstart...';
+
+                // Füge Socket.IO Events hinzu
+                socket.on('stateUpdate', handleStateUpdate);
+
+                console.log(`Publikum verbunden mit Socket.IO.`);
+
+            } catch (socketError) {
+                console.error("SCHWERER FEHLER: Socket.IO konnte nicht geladen oder verbunden werden.", socketError);
+                statusDiv.textContent = "SCHWERER FEHLER: Verbindung fehlgeschlagen. Siehe Konsole.";
+                return;
+            }
+        }
+
+        function handleStateUpdate(state) {
+            statusDiv.textContent = `Status: ${state.status}`;
+            timerDiv.textContent = `Zeit: ${state.timer}s`;
+
+            prompt1Div.textContent = state.prompt1 || 'Noch Keine Eingabe...';
+            prompt2Div.textContent = state.prompt2 || 'Noch Keine Eingabe...';
+
+            // Logik für READY und aktive Phasen
+            if (state.status === 'READY') {
+                startButton.disabled = false;
+                resetButton.disabled = true;
+                headerDiv.style.display = 'block';
+                result1ImageDiv.style.backgroundImage = 'none';
+                result2ImageDiv.style.backgroundImage = 'none';
+            } else if (state.status !== 'FINISHED') {
+                startButton.disabled = true;
+                resetButton.disabled = false;
+                headerDiv.style.display = 'block';
+            }
+
+            if (state.images1.length > 0 && state.images2.length > 0) {
+                allImages.images1 = state.images1;
+                allImages.images2 = state.images2;
+            }
+
+            // Thumbnail-Anzeige (standardmäßig cover)
+            if ((state.selected1 !== null || state.selected2 !== null) && state.status !== 'FINISHED') {
+                if (state.selected1 !== null && allImages.images1.length > state.selected1) {
+                    result1ImageDiv.style.backgroundImage = `url(${allImages.images1[state.selected1]})`;
+                }
+                if (state.selected2 !== null && allImages.images2.length > state.selected2) {
+                    result2ImageDiv.style.backgroundImage = `url(${allImages.images2[state.selected2]})`;
+                }
+            }
+
+            if (state.status === 'FINISHED') {
+                gameContainer.classList.add('result-view');
+                headerDiv.style.display = 'none';
+                resetButton.disabled = false;
+
+                if (state.selected1 !== null && allImages.images1.length > state.selected1) {
+                    const url1 = allImages.images1[state.selected1];
+                    result1ImageDiv.style.backgroundImage = `url(${url1})`;
+                }
+                if (state.selected2 !== null && allImages.images2.length > state.selected2) {
+                    const url2 = allImages.images2[state.selected2];
+                    result2ImageDiv.style.backgroundImage = `url(${url2})`;
+                }
+            } else {
+                gameContainer.classList.remove('result-view');
+                headerDiv.style.display = 'block';
+            }
+        }
+
+        // Starte die Initialisierung
+        initializeApp();
+    </script>
+</body>
+</html>
