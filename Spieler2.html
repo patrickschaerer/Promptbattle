@@ -4,54 +4,184 @@
     <meta charset="UTF-8">
     <title>Promptbattle - Spieler 2</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f0f8ff; }
-        #status, #timer { font-size: 2.5em; margin-bottom: 20px; font-weight: bold; color: #007bff; }
-        #promptInput { width: 80%; padding: 15px; font-size: 1.2em; border: 3px solid #007bff; border-radius: 8px; resize: none; }
-        #promptArea, #imageSelection { width: 100%; text-align: center; }
-        #imageSelection { display: none; margin-top: 30px; }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffebee 0%, #fff8f8 100%);
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #c62828;
+            text-shadow: 2px 2px 4px rgba(198, 40, 40, 0.1);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #status, #timer {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #d32f2f;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(211, 47, 47, 0.1);
+        }
+
+        #promptInput {
+            width: 80%;
+            max-width: 600px;
+            padding: 18px;
+            font-size: 1.3em;
+            border: 3px solid #ef9a9a;
+            border-radius: 12px;
+            resize: none;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(239, 154, 154, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        #promptInput:focus {
+            outline: none;
+            border-color: #e57373;
+            box-shadow: 0 6px 20px rgba(229, 115, 115, 0.4);
+            transform: translateY(-2px);
+        }
+
+        #promptArea, #imageSelection {
+            width: 100%;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        #imageSelection {
+            display: none;
+            margin-top: 30px;
+        }
+
+        #imageSelection h2 {
+            color: #c62828;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+        }
+
         .image-option {
             border: 4px solid transparent;
-            width: 200px;
-            height: 200px;
-            margin: 15px;
+            width: 220px;
+            height: 220px;
+            margin: 20px;
             cursor: pointer;
             display: inline-block;
-            background-color: #ddd;
+            background-color: #fff5f5;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            color: transparent;
-            line-height: 200px;
+            color: #c62828;
+            line-height: 220px;
             text-align: center;
-            font-size: 0.9em;
+            font-size: 1em;
+            font-weight: bold;
             overflow: hidden;
-            transition: border-color 0.2s;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(239, 154, 154, 0.2);
         }
 
-        .image-option.selected { border-color: #28a745; box-shadow: 0 0 15px #28a745; }
-        button { padding: 12px 25px; font-size: 1.1em; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 5px; margin-top: 15px; }
-        .hidden { display: none; }
+        .image-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(239, 154, 154, 0.3);
+            border-color: #ef5350;
+        }
+
+        .image-option.selected {
+            border-color: #d32f2f;
+            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.5);
+            transform: translateY(-8px) scale(1.05);
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background: linear-gradient(135deg, #e57373, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(211, 47, 47, 0.4);
+            background: linear-gradient(135deg, #d32f2f, #c62828);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #ffcdd2, #ffebee);
+            color: #90a4ae;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            #status, #timer {
+                font-size: 1.8em;
+            }
+
+            #promptInput {
+                width: 95%;
+                font-size: 1.1em;
+                padding: 15px;
+            }
+
+            .image-option {
+                width: 180px;
+                height: 180px;
+                margin: 10px;
+                line-height: 180px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>🤖 Spieler 2</h1>
+    <h1>🔴 Spieler 2 🤖</h1>
     <div id="status">Warten auf Spielstart...</div>
     <div id="timer"></div>
 
     <div id="promptArea" class="hidden">
-        <textarea id="promptInput" rows="5" placeholder="Geben Sie hier Ihren Prompt ein..."></textarea>
+        <textarea id="promptInput" rows="4" placeholder="Geben Sie hier Ihren kreativen Prompt ein..."></textarea>
     </div>
 
     <div id="imageSelection">
         <h2>Wählen Sie Ihr bestes Bild:</h2>
-        <div id="images">
-            </div>
+        <div id="images"></div>
         <button id="confirmBtn" onclick="confirmSelection()" disabled>Auswahl bestätigen</button>
     </div>
 
     <script>
-        const PLAYER_ID = 2; // Wichtig: Eindeutige ID für Spieler 2
-
+        const PLAYER_ID = 2;
         let socket = null;
 
         const statusDiv = document.getElementById('status');
@@ -81,7 +211,6 @@
         function confirmSelection() {
             if (selectedImageId !== null && socket) {
                 socket.emit('selectImage', { playerId: PLAYER_ID, imageId: selectedImageId });
-
                 statusDiv.textContent = 'Auswahl gesendet. Warten auf das Ende der Runde...';
                 imageSelection.style.display = 'none';
                 confirmBtn.disabled = true;
@@ -96,72 +225,56 @@
                 const div = document.createElement('div');
                 div.classList.add('image-option');
                 div.setAttribute('data-id', index);
-
                 div.textContent = `Bild ${index + 1} (lädt...)`;
-                div.style.backgroundColor = '#f0f0f0';
+                div.style.backgroundColor = '#fff5f5';
 
                 const img = new Image();
-                const cacheBustingUrl = `${url}?t=${timestamp}`;
+                const connector = url.includes('?') ? '&' : '?';
+                const cacheBustingUrl = `${url}${connector}t=${timestamp}`;
 
                 img.onload = () => {
                     div.style.backgroundImage = `url(${cacheBustingUrl})`;
-                    div.textContent = `Bild ${index + 1}`;
+                    div.textContent = '';
                     div.style.backgroundColor = 'transparent';
                 };
 
                 img.onerror = () => {
-                    div.textContent = `Ladefehler Bild ${index + 1}`;
-                    div.style.backgroundColor = '#d9534f';
+                    div.textContent = `Ladefehler ${index + 1}`;
+                    div.style.backgroundColor = '#ffcdd2';
                     console.error(`[Spieler ${PLAYER_ID}] FEHLER beim Laden von Bild ${index + 1}: ${cacheBustingUrl}`);
                 };
 
                 img.src = cacheBustingUrl;
-
                 imagesDiv.appendChild(div);
             });
         }
 
-        /**
-         * Läd das Socket.IO Client Skript dynamisch über die korrekte URL
-         * und initialisiert die Socket-Verbindung.
-         */
         function loadSocketScriptAndConnect(socketUrl) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = `${socketUrl}/socket.io/socket.io.js`;
-
                 script.onload = () => {
                     resolve(io(socketUrl));
                 };
                 script.onerror = () => {
                     reject(new Error(`Fehler beim Laden von Socket.IO von ${script.src}`));
                 };
-
                 document.head.appendChild(script);
             });
         }
 
-        // Hauptinitialisierungsfunktion
         async function initializeApp() {
-            // KORREKTUR: Erzwinge Port 3000, um die Verbindung sicherzustellen
             const host = window.location.hostname;
             const protocol = window.location.protocol;
-
-            // Definiere die Socket-URL mit dem bekannten Server-Port 3000
             const socketUrl = `${protocol}//${host}:3000`;
 
             try {
-                // 1. Lade Socket.IO Skript und verbinde
                 socket = await loadSocketScriptAndConnect(socketUrl);
                 statusDiv.textContent = 'Verbunden. Warten auf Spielstart...';
-
-                // 2. Füge Socket.IO Events hinzu
                 socket.on('stateUpdate', handleStateUpdate);
-
                 console.log(`Spieler ${PLAYER_ID} verbunden mit Socket.IO unter ${socketUrl}`);
-
             } catch (socketError) {
-                console.error("SCHWERER FEHLER: Verbindung fehlgeschlagen. Siehe Konsole.", socketError);
+                console.error("SCHWERER FEHLER: Verbindung fehlgeschlagen.", socketError);
                 statusDiv.textContent = "SCHWERER FEHLER: Verbindung fehlgeschlagen. Siehe Konsole.";
                 return;
             }
@@ -169,7 +282,7 @@
 
         function handleStateUpdate(state) {
             statusDiv.textContent = `Status: ${state.status}`;
-            timerDiv.textContent = `Zeit: ${state.timer}s`;
+            timerDiv.textContent = state.timer > 0 ? `Zeit: ${state.timer}s` : '';
 
             switch (state.status) {
                 case 'READY':
@@ -180,27 +293,29 @@
                     imagesDiv.innerHTML = '';
                     confirmBtn.disabled = true;
                     break;
+
                 case 'PROMPTING':
                     promptArea.classList.remove('hidden');
                     imageSelection.style.display = 'none';
                     break;
+
                 case 'GENERATING':
                     statusDiv.textContent = 'Bilder werden generiert... ⏳';
                     promptArea.classList.add('hidden');
                     imageSelection.style.display = 'none';
                     break;
+
                 case 'SELECTING':
                     statusDiv.textContent = 'BILDER GENERIERT! Wählen Sie aus.';
                     promptArea.classList.add('hidden');
-
                     if (imagesDiv.children.length === 0) {
                         displayImages(state[`images${PLAYER_ID}`]);
                     }
-
                     if (selectedImageId === null) {
                         imageSelection.style.display = 'block';
                     }
                     break;
+
                 case 'FINISHED':
                     statusDiv.textContent = 'BATTLE BEENDET! Ergebnisse werden angezeigt.';
                     promptArea.classList.add('hidden');
