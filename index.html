@@ -35,18 +35,51 @@
             box-sizing: border-box;
             position: relative;
             z-index: 5;
+            gap: 20px;
         }
 
         .player-card {
             background: white;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             width: 45%;
             margin: 0 10px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        /* Spieler 1 - Pastellblau */
+        .player-card.player1 {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f8fbff 100%);
+            border-color: #90caf9;
+        }
+
+        .player-card.player1 h2 {
+            color: #1565c0;
+            text-shadow: 1px 1px 2px rgba(21, 101, 192, 0.1);
+        }
+
+        .player-card.player1 h3 {
+            color: #1976d2;
+        }
+
+        /* Spieler 2 - Pastellrot */
+        .player-card.player2 {
+            background: linear-gradient(135deg, #ffebee 0%, #fff8f8 100%);
+            border-color: #ef9a9a;
+        }
+
+        .player-card.player2 h2 {
+            color: #c62828;
+            text-shadow: 1px 1px 2px rgba(198, 40, 40, 0.1);
+        }
+
+        .player-card.player2 h3 {
+            color: #d32f2f;
         }
 
         /* Styles für die finale Bildansicht (FINISHED Status) */
@@ -69,6 +102,30 @@
             align-items: center;
             overflow: hidden;
             cursor: pointer;
+            position: relative;
+        }
+
+        /* Farbige Rahmen in der Vollbildansicht */
+        .result-view .player-result.player1::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 50%;
+            height: 8px;
+            background: #2196f3;
+            z-index: 10;
+        }
+
+        .result-view .player-result.player2::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 50%;
+            height: 8px;
+            background: #f44336;
+            z-index: 10;
         }
 
         /* Bildgröße für fensterfüllende Darstellung (in .result-view) */
@@ -95,76 +152,138 @@
         }
 
         /* Timer und Status Styles */
-        #timer { font-size: 3em; color: #d9534f; margin-bottom: 10px; }
-        #status { font-size: 1.5em; margin-bottom: 15px; }
+        #timer {
+            font-size: 3em;
+            color: #d9534f;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #status {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #444;
+        }
 
         /* Button Styles */
         button {
-            padding: 10px 20px;
+            padding: 12px 25px;
             font-size: 1.2em;
             cursor: pointer;
-            background-color: #007bff;
+            background: linear-gradient(135deg, #4caf50, #45a049);
             color: white;
             border: none;
-            border-radius: 5px;
-            margin: 0 5px;
-            transition: background-color 0.3s;
+            border-radius: 8px;
+            margin: 0 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        #resetButton {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
         }
 
         /* Standard-Prompt Box */
         .prompt-box {
             min-height: 80px;
-            border: 1px dashed #ccc;
-            padding: 10px;
+            border: 2px dashed #ccc;
+            padding: 15px;
             margin-bottom: 15px;
             font-style: italic;
             flex-grow: 1;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(5px);
+            font-size: 1.5em;
+            line-height: 1.4;
+        }
+
+        .player1 .prompt-box {
+            border-color: #90caf9;
+            background: rgba(227, 242, 253, 0.8);
+        }
+
+        .player2 .prompt-box {
+            border-color: #ef9a9a;
+            background: rgba(255, 235, 238, 0.8);
         }
 
         /* Ergebnisbild-Container im Standard-Layout (Thumbnail-Größe) */
         .result-image {
             width: 100%;
-            height: 200px;
-            background-color: #f0f0f0;
+            height: 220px;
+            background-color: #f9f9f9;
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 2px solid #ccc;
+            border: 2px solid #e0e0e0;
             overflow: hidden;
             position: relative;
             margin-top: 15px;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .player1 .result-image {
+            border-color: #90caf9;
+            background-color: #f3f8ff;
+        }
+
+        .player2 .result-image {
+            border-color: #ef9a9a;
+            background-color: #fff5f5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #gameContainer {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .player-card {
+                width: 100%;
+                margin: 0 0 20px 0;
+            }
+
+            #timer {
+                font-size: 2em;
+            }
         }
     </style>
 </head>
 <body>
     <div id="header">
-        <h1>📸 KI Promptbattle Live</h1>
+        <h1>🎮 KI Promptbattle Live 📸</h1>
         <div id="status">Warten auf Spielstart...</div>
         <div id="timer"></div>
-        <button id="startButton" onclick="startGame()">▶️ START BATTLE RUNDE</button>
-        <button id="resetButton" onclick="resetGame()" style="background-color: #f0ad4e;">🔄 RESET</button>
+        <button id="startButton" onclick="startGame()">▶ START BATTLE RUNDE</button>
+        <button id="resetButton" onclick="resetGame()">🔄 RESET</button>
     </div>
 
     <div id="gameContainer">
-        <div id="player1Card" class="player-card player-result">
-            <h2>Spieler 1</h2>
+        <div id="player1Card" class="player-card player-result player1">
+            <h2>🔵 Spieler 1</h2>
             <h3>Aktueller Prompt (Live)</h3>
             <div id="prompt1" class="prompt-box">Noch Keine Eingabe...</div>
-
             <h3 class="result-label">Ausgewähltes Bild (Resultat)</h3>
             <div id="result1Image" class="result-image">
                 <div id="result1Text" class="result-text">Spieler 1 Ergebnis</div>
             </div>
         </div>
 
-        <div id="player2Card" class="player-card player-result">
-            <h2>Spieler 2</h2>
+        <div id="player2Card" class="player-card player-result player2">
+            <h2>🔴 Spieler 2</h2>
             <h3>Aktueller Prompt (Live)</h3>
             <div id="prompt2" class="prompt-box">Noch Keine Eingabe...</div>
-
             <h3 class="result-label">Ausgewähltes Bild (Resultat)</h3>
             <div id="result2Image" class="result-image">
                 <div id="result2Text" class="result-text">Spieler 2 Ergebnis</div>
@@ -217,41 +336,30 @@
         function loadSocketScriptAndConnect(socketUrl) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                // Lade Skript dynamisch von der ermittelten URL (inkl. Port)
                 script.src = `${socketUrl}/socket.io/socket.io.js`;
-
                 script.onload = () => {
                     resolve(io(socketUrl));
                 };
                 script.onerror = () => {
                     reject(new Error(`Fehler beim Laden von Socket.IO von ${script.src}`));
                 };
-
                 document.head.appendChild(script);
             });
         }
 
-
         // Hauptinitialisierungsfunktion
         async function initializeApp() {
-            // NEUE KORREKTUR: Erzwinge Port 3000, da window.location.origin diesen nicht liefert
             const host = window.location.hostname;
             const protocol = window.location.protocol;
-
-            // Definiere die Socket-URL mit dem bekannten Server-Port 3000
             const socketUrl = `${protocol}//${host}:3000`;
+
             statusDiv.textContent = `Versuche Verbindung zu ${socketUrl}...`;
 
             try {
-                // Lade Socket.IO Skript und verbinde
                 socket = await loadSocketScriptAndConnect(socketUrl);
                 statusDiv.textContent = 'Verbunden. Warten auf Spielstart...';
-
-                // Füge Socket.IO Events hinzu
                 socket.on('stateUpdate', handleStateUpdate);
-
                 console.log(`Publikum verbunden mit Socket.IO.`);
-
             } catch (socketError) {
                 console.error("SCHWERER FEHLER: Socket.IO konnte nicht geladen oder verbunden werden.", socketError);
                 statusDiv.textContent = "SCHWERER FEHLER: Verbindung fehlgeschlagen. Siehe Konsole.";
@@ -266,7 +374,6 @@
             prompt1Div.textContent = state.prompt1 || 'Noch Keine Eingabe...';
             prompt2Div.textContent = state.prompt2 || 'Noch Keine Eingabe...';
 
-            // Logik für READY und aktive Phasen
             if (state.status === 'READY') {
                 startButton.disabled = false;
                 resetButton.disabled = true;
@@ -284,7 +391,6 @@
                 allImages.images2 = state.images2;
             }
 
-            // Thumbnail-Anzeige (standardmäßig cover)
             if ((state.selected1 !== null || state.selected2 !== null) && state.status !== 'FINISHED') {
                 if (state.selected1 !== null && allImages.images1.length > state.selected1) {
                     result1ImageDiv.style.backgroundImage = `url(${allImages.images1[state.selected1]})`;
@@ -313,7 +419,6 @@
             }
         }
 
-        // Starte die Initialisierung
         initializeApp();
     </script>
 </body>
