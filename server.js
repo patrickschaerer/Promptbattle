@@ -3,15 +3,29 @@ const http = require('http');
 const socketio = require('socket.io');
 const { fal } = require('@fal-ai/client');
 const cors = require('cors');
-const path = require('path'); // Neu: Für die Handhabung von Dateipfaden
+const path = require('path');
+const fs = require('fs');
 
-// --- Konfiguration ---
-const MODEL_ID = 'fal-ai/imagen4/preview/fast'; // Fal.ai Bildgenerierungsmodell
+// --- Konfiguration aus Datei laden ---
+let config;
+try {
+    // Lese die Konfigurationsdatei synchron ein
+    config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+} catch (error) {
+    console.error("FEHLER: Konfigurationsdatei 'config.json' nicht gefunden oder ungültig.", error);
+    process.exit(1);
+}
+
+// Werte aus der Config-Datei zuweisen
+const IP_ADDRESS = config.server.ip;
+const PORT = config.server.port || 3000; // Fallback auf 3000, falls nicht in Config
+
+// --- Konstanten ---
+const MODEL_ID = 'fal-ai/imagen4/preview/fast';
 const NUM_IMAGES_PER_PLAYER = 3;
+const PROMPT_TIME = 60;
+const GENERATION_TIME = 5;
 
-const PORT = process.env.PORT || 3000;
-const PROMPT_TIME = 60; // Sekunden für die Prompt-Phase
-const GENERATION_TIME = 5; // Simulierte Wartezeit nach der API-Antwort
 const STATUS = {
     READY: 'READY',
     PROMPTING: 'PROMPTING',
@@ -35,22 +49,26 @@ let timerInterval;
 
 // --- Express/Socket.IO Initialisierung ---
 const app = express();
-app.use(cors()); // CORS für Express (statische Dateien) verwenden
+app.use(cors());
 
-// Stelle sicher, dass Express alle Dateien aus dem aktuellen Verzeichnis bereitstellt.
 app.use(express.static(path.join(__dirname)));
+
+// Endpoint für Clients, um die Socket-URL zu erhalten
+app.get('/config', (req, res) => {
+    res.json({
+        socketUrl: `http://${IP_ADDRESS}:${PORT}`
+    });
+});
 
 const server = http.createServer(app);
 
-// KORREKTUR: Socket.IO Initialisierung mit erweiterten CORS-Optionen
+// KORREKTUR: Socket.IO Initialisierung mit dynamischen Werten aus config.json
 const io = socketio(server, {
     cors: {
-        // Erlaubt die Verbindung von den Host-IPs (mit und ohne Port)
-        // DIES BEHEBT DEN CORS-FEHLER!
         origin: [
-            "http://10.30.27.254:3000",
-            "http://10.30.27.254",
-            "http://localhost:3000",
+            `http://${IP_ADDRESS}:${PORT}`, // Dynamisch aus Config
+            `http://${IP_ADDRESS}`,         // Dynamisch aus Config (ohne Port)
+            `http://localhost:${PORT}`,
             "http://localhost"
         ],
         methods: ["GET", "POST"]
@@ -59,27 +77,38 @@ const io = socketio(server, {
 
 // --- Spiellogik ---
 
-// Die eigentliche Logik für die Bildgenerierung
 async function generateImages(prompt) {
     if (!prompt) return [];
     console.log(`Starte Bildgenerierung für Prompt: "${prompt}"`);
 
-    const result = await fal.imagine(
-        MODEL_ID,
-        {
-            prompt: prompt,
-            num_outputs: NUM_IMAGES_PER_PLAYER,
-            seed: Math.floor(Math.random() * 10000)
+    try {
+        const result = await fal.subscribe(
+            MODEL_ID,
+            {
+                input: {
+                    prompt: prompt,
+                    num_images: NUM_IMAGES_PER_PLAYER,
+                    enable_safety_checker: false // Optional, je nach Bedarf
+                },
+                pollInterval: 1000,
+                logs: true
+            }
+        );
+        // Fal.ai Client Struktur beachten (result.images array)
+        if (result && result.images) {
+             return result.images.map(img => img.url);
         }
-    );
+        return [];
 
-    return result.images.map(img => img.url);
+    } catch (error) {
+        console.error("Fehler bei der Bildgenerierung:", error);
+        return [];
+    }
 }
 
-// Timer-Funktion für die Prompt-Phase
 function startTimer() {
     battleState.timer = PROMPT_TIME;
-    io.emit('stateUpdate', battleState); // Initiales Update
+    io.emit('stateUpdate', battleState);
 
     timerInterval = setInterval(() => {
         battleState.timer--;
@@ -92,13 +121,11 @@ function startTimer() {
     }, 1000);
 }
 
-// Behandelt das Ende der Prompt-Phase
 async function handlePromtingEnd() {
     battleState.status = STATUS.GENERATING;
     io.emit('stateUpdate', battleState);
     console.log('Prompt-Phase beendet. Starte Generierung...');
 
-    // Generiere Bilder parallel
     const [images1, images2] = await Promise.all([
         generateImages(battleState.prompt1),
         generateImages(battleState.prompt2)
@@ -107,18 +134,14 @@ async function handlePromtingEnd() {
     battleState.images1 = images1;
     battleState.images2 = images2;
     battleState.status = STATUS.SELECTING;
-    battleState.timer = GENERATION_TIME; // Timer wird für die Wartezeit missbraucht oder entfernt
+    battleState.timer = 0;
 
     io.emit('stateUpdate', battleState);
     console.log('Bilder generiert. Starte Auswahlphase.');
-
-    // In der SELECTING Phase läuft kein Timer, da die Spieler selbst bestätigen
-    // Wenn Sie hier einen Timer wünschen, starten Sie ihn hier.
 }
 
 function startGame() {
     if (battleState.status === STATUS.READY) {
-        // Setze Prompts und Auswahl zurück
         battleState.prompt1 = '';
         battleState.prompt2 = '';
         battleState.selected1 = null;
@@ -137,10 +160,8 @@ function startGame() {
 io.on('connection', (socket) => {
     console.log('Neuer Client verbunden:', socket.id);
 
-    // Initialen Zustand senden
     socket.emit('stateUpdate', battleState);
 
-    // Events vom Spielleiter (Publikum)
     socket.on('startGame', () => {
         startGame();
     });
@@ -152,7 +173,6 @@ io.on('connection', (socket) => {
         battleState.status = STATUS.READY;
         battleState.timer = PROMPT_TIME;
 
-        // Alle Daten löschen
         battleState.prompt1 = '';
         battleState.prompt2 = '';
         battleState.images1 = [];
@@ -164,7 +184,6 @@ io.on('connection', (socket) => {
         console.log('Spiel zurückgesetzt.');
     });
 
-    // Events von den Spielern
     socket.on('updatePrompt', (data) => {
         if (battleState.status !== STATUS.PROMPTING) return;
 
@@ -173,7 +192,7 @@ io.on('connection', (socket) => {
         } else if (data.playerId === 2) {
             battleState.prompt2 = data.prompt;
         }
-        io.emit('stateUpdate', battleState); // Live-Update für das Publikum
+        io.emit('stateUpdate', battleState);
     });
 
     socket.on('selectImage', (data) => {
@@ -184,9 +203,8 @@ io.on('connection', (socket) => {
         } else if (data.playerId === 2) {
             battleState.selected2 = data.imageId;
         }
-        io.emit('stateUpdate', battleState); // Update für alle
+        io.emit('stateUpdate', battleState);
 
-        // Prüfen, ob beide Spieler gewählt haben
         if (battleState.selected1 !== null && battleState.selected2 !== null) {
             battleState.status = STATUS.FINISHED;
             io.emit('stateUpdate', battleState);
@@ -197,11 +215,12 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('Client getrennt:', socket.id);
     });
-});
+}); // <--- DIESE KLAMMER IST ENTSCHEIDEND! Die Fehlerzeile ist hier.
 
 // --- Server starten ---
 
-server.listen(PORT, () => {
-    console.log(`Server läuft auf http://localhost:${PORT}`);
-    console.log(`Client-Zugriff unter http://10.30.27.254:${PORT}/index.html`);
+// Hier verwenden wir nun die Variablen aus der Config!
+server.listen(PORT, IP_ADDRESS, () => {
+    console.log(`Server läuft auf http://${IP_ADDRESS}:${PORT}`);
+    console.log(`FAL Model: ${MODEL_ID}`);
 });
