@@ -44,14 +44,17 @@ Follow these commands to install (on a raspberry pi):
    
     nano ~/.bashrc
    
-     at the bottom of the page add: FAL_KEY="YOUR_FAL_AI_API_KEY"
+     at the bottom of the page add:  export FAL_KEY_ID="IHR_KEY_ID"
+ export FAL_KEY_SECRET="IHR_KEY_SECRET"
    
     source ~/.bashrc
    
 8. change the IP-Address in config.json to the webservers (raspberry pi) address.
-9.  cd /var/www/html
-10. Start the server: node server.js
-11. Load all html-Pages to play.
+9. Aktion: Bevor Sie den Server starten, müssen Sie die Schlüssel in die aktuelle Sitzung laden
+source ~/.bashrc
+10.  cd /var/www/html
+11. Start the server: node server.js
+12. Load all html-Pages to play.
 
 I am not a professional coder. Most of the code here I do not understand, but google gemini does and did all the coding for me :P
 
