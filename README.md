@@ -56,7 +56,7 @@ Follow these commands to install (on a raspberry pi):
 12. node server.js
 13. Load all html-Pages to play.
 
-I am not a professional coder. Most of the code here I do not understand, but google gemini does and did all the coding for me :P
+I am not a professional coder. Most of the code here I do not understand, but google gemini and claude.ai do and did all the coding for me :P
 
 Have fun
 Greets Patrick
