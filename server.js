@@ -19,6 +19,16 @@ try {
 const IP_ADDRESS = config.server.ip;
 const PORT = config.server.port || 3000;
 
+// FAL.AI Konfiguration aus config.json
+const MODEL_ID = config.fal.model;
+const NUM_IMAGES_PER_PLAYER = config.fal.num_images_per_player || 3;
+const IMAGE_SIZE = config.fal.image_size || "landscape_4_3";
+const ENABLE_SAFETY_CHECKER = config.fal.enable_safety_checker || false;
+
+// Game Konfiguration aus config.json
+const PROMPT_TIME = config.game.prompt_time || 60;
+const GENERATION_TIME = config.game.generation_time || 5;
+
 // --- FAL.AI Konfiguration ---
 // Die neuen Umgebungsvariablen werden automatisch von @fal-ai/client gelesen
 // Stelle sicher, dass FAL_KEY_ID und FAL_KEY_SECRET gesetzt sind
@@ -28,12 +38,7 @@ if (!process.env.FAL_KEY_ID || !process.env.FAL_KEY_SECRET) {
     process.exit(1);
 }
 
-// --- Konstanten ---
-const MODEL_ID = 'fal-ai/flux/schnell'; // Aktualisiertes Model (schnell und kosteneffizient)
-const NUM_IMAGES_PER_PLAYER = 3;
-const PROMPT_TIME = 60;
-const GENERATION_TIME = 5;
-
+// --- Status Konstanten ---
 const STATUS = {
     READY: 'READY',
     PROMPTING: 'PROMPTING',
@@ -86,7 +91,7 @@ const io = socketio(server, {
 
 /**
  * Generiert Bilder mit der aktualisierten fal.ai API
- * Verwendet jetzt fal.subscribe() statt fal.imagine()
+ * Verwendet jetzt Konfigurationswerte aus config.json
  */
 async function generateImages(prompt) {
     if (!prompt || prompt.trim() === '') {
@@ -95,15 +100,16 @@ async function generateImages(prompt) {
     }
 
     console.log(`Starte Bildgenerierung für Prompt: "${prompt}"`);
+    console.log(`Verwende Model: ${MODEL_ID}, Anzahl Bilder: ${NUM_IMAGES_PER_PLAYER}, Bildgröße: ${IMAGE_SIZE}`);
 
     try {
-        // Verwende die aktualisierte API mit subscribe
+        // Verwende die aktualisierte API mit subscribe und config-Werten
         const result = await fal.subscribe(MODEL_ID, {
             input: {
                 prompt: prompt,
                 num_images: NUM_IMAGES_PER_PLAYER,
-                image_size: "landscape_4_3", // Optional: Bildformat
-                enable_safety_checker: false
+                image_size: IMAGE_SIZE,
+                enable_safety_checker: ENABLE_SAFETY_CHECKER
             },
             logs: true,
             onQueueUpdate: (update) => {
@@ -265,7 +271,13 @@ io.on('connection', (socket) => {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server läuft auf http://${IP_ADDRESS}:${PORT}`);
     console.log(`Client-Zugriff unter http://${IP_ADDRESS}:${PORT}/index.html`);
+    console.log('=== KONFIGURATION ===');
     console.log(`FAL Model: ${MODEL_ID}`);
+    console.log(`Bilder pro Spieler: ${NUM_IMAGES_PER_PLAYER}`);
+    console.log(`Bildgröße: ${IMAGE_SIZE}`);
+    console.log(`Safety Checker: ${ENABLE_SAFETY_CHECKER ? 'Aktiviert' : 'Deaktiviert'}`);
+    console.log(`Prompt Zeit: ${PROMPT_TIME}s`);
     console.log(`FAL_KEY_ID gesetzt: ${process.env.FAL_KEY_ID ? 'Ja' : 'Nein'}`);
     console.log(`FAL_KEY_SECRET gesetzt: ${process.env.FAL_KEY_SECRET ? 'Ja (versteckt)' : 'Nein'}`);
+    console.log('=====================');
 });
