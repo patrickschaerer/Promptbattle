@@ -1,6 +1,8 @@
 # Promptbattle
 Websites for a Promptbattle public game, where two contestants prompt a picture and the public has to decide who created the better picture.
 
+UPDATE: I made an Android-App with the same functionality. Check it out on https://buymeacoffee.com/patrickschaerer as soon as you donated you'll get the download link.
+
 Load index.html on the public screen, Spieler1.html on the screen of Player 1 and Spieler2.html on the screen of Player 2.
 
 There must be installed on the webserver:
